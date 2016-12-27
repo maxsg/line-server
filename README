@@ -1,0 +1,47 @@
+SETUP
+
+Instructions for running: Download Node.js from http://nodejs.org if not already installed.
+
+Running locally: 
+	Go into the top level app directory:
+		cd line-server
+	
+	Install the node dependencies:
+		npm install
+
+	Optionally, create a test text file to server. You can specify whatever name and number of lines you want:
+		python generate_file.py filename number-of-lines
+
+	Designate the text file to serve and start the server:
+		./run.sh filename
+
+
+DISCUSSION
+
+How does your system work?
+	The system uses a lookup table and Node.js readable streams to translate a line number into a range of bytes to read in the file. It does this by preprocessing the file to create the lookup table, which associates line numbers to byte offsets for each line. The server also caches its responses to requests in order to speed up performance.
+
+How will your system perform with a 1 GB file? a 10 GB file? a 100 GB file?
+Under most scenarios, the system will perform equally well on all file sizes. The system first performs a lookup, which takes amortized constant time, using a JavaScript object, which is backed by a hash table. We perform this lookup twice per request, once to find the byte offset of the start of the line and once to find the byte offset of the end. Then, we use Node.js readable streams to read only this range of bytes from the file. The performance of this operation is dependent on the range of bytes we are reading, but for most cases, this should be fast. However, there are certain circumstances where this could be slow. For example, if the file were very large and had very few lines, then each read operation would be reading a large amount of data at once, which would take a while. To improve performance, however, the server caches its responses so that common requests will be served up without the overhead of file reading. 
+
+
+How will your system perform with 100 users? 10000 users? 1000000 users?
+	The system should scale well with the number of users. Node.js uses an event-driven, asynchronous model, which performs best with large numbers of less computationally intensive tasks, and this is exactly what this server will do. Additionally, the stream reader module reads asynchronously from the file, so that no on reader will be blocked by another.
+
+What documentation, websites, papers, etc did you consult in doing this assignment?
+	https://nodejs.org/api/
+	http://expressjs.com/4x/api.html
+	http://stackoverflow.com/
+	http://www.toptal.com/nodejs/why-the-hell-would-i-use-node-js
+	
+
+What third-party libraries or other tools does the system use? How did you choose each library or framework you used?
+	Express, Node.js: I chose to use a Node.js framework for this system, because Node excels at providing a light-weight, non-blocking model for large numbers of small requests. Since the only real computation in the server for this system would be reading a file or performing a table lookup, Node was a perfect fit, providing excellent scalability in terms of numbers of requests. I chose Express as the Node.js framework, because it is designed for speed, with little additional overhead, and it is an excellent framework for quickly designing an API.	
+
+How long did you spend on this exercise? If you had unlimited more time to spend on this, how would you spend it and how would you prioritize each item?
+	I spent about 10 hours researching and about 4 hours of actual coding on this exercise. If I had unlimited time, I would first add some testing of my API, using a framework like Mocha, for example. Next, I would refactor some of my JavaScript code to make it cleaner. For example, I would try to replace some for-iterations with higher-order functions where possible. After that, I would implement some more performance optimizations. First, I would port my system to the cloud, so that scaling becomes much easier. Next, I would try to take full advantage of the hardware’s multi-core CPU by setting up a Node cluster https://nodejs.org/api/cluster.html.  This would provide some immediate performance boost with multi-processing. With this in place, I would set up a load balancer and then spin up some more servers in the cloud to gain horizontal scalability.
+
+If you were to critique your code, what would you have to say about it?
+	I would say my code is modular, simple and clever. There is no unnecessary overhead in terms of the framework, and I have implemented modularity both in the back end and in the routing. 
+
+
